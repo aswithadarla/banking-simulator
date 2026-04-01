@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking Simulator - Transactions</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+    <h1>🏦 Banking Simulator</h1>
+    <div>
+        <a href="index.html">Dashboard</a>
+        <a href="accounts.html">Accounts</a>
+        <a href="transactions.html">Transactions</a>
+        <a href="history.html">History</a>
+        <a href="reports.html">Reports</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- Deposit -->
+    <div class="card">
+        <h2>💰 Deposit Money</h2>
+        <div id="depositAlert" class="alert"></div>
+        <div class="form-group">
+            <label>Account ID</label>
+            <input type="number" id="depositAccountId" placeholder="e.g. 1">
+        </div>
+        <div class="form-group">
+            <label>Amount</label>
+            <input type="number" id="depositAmount" placeholder="e.g. 5000">
+        </div>
+        <button class="btn btn-success" onclick="deposit()">Deposit</button>
+    </div>
+
+    <!-- Withdraw -->
+    <div class="card">
+        <h2>💸 Withdraw Money</h2>
+        <div id="withdrawAlert" class="alert"></div>
+        <div class="form-group">
+            <label>Account ID</label>
+            <input type="number" id="withdrawAccountId" placeholder="e.g. 1">
+        </div>
+        <div class="form-group">
+            <label>Amount</label>
+            <input type="number" id="withdrawAmount" placeholder="e.g. 1000">
+        </div>
+        <button class="btn btn-danger" onclick="withdraw()">Withdraw</button>
+    </div>
+
+    <!-- Transfer -->
+    <div class="card">
+        <h2>🔄 Transfer Money</h2>
+        <div id="transferAlert" class="alert"></div>
+        <div class="form-group">
+            <label>From Account ID</label>
+            <input type="number" id="fromAccountId" placeholder="e.g. 1">
+        </div>
+        <div class="form-group">
+            <label>To Account ID</label>
+            <input type="number" id="toAccountId" placeholder="e.g. 2">
+        </div>
+        <div class="form-group">
+            <label>Amount</label>
+            <input type="number" id="transferAmount" placeholder="e.g. 500">
+        </div>
+        <button class="btn btn-primary" onclick="transfer()">Transfer</button>
+    </div>
+
+</div>
+
+<script>
+    const API = 'http://localhost:8080/api';
+
+    // Deposit
+    async function deposit() {
+        const accountId = document.getElementById('depositAccountId').value;
+        const amount = document.getElementById('depositAmount').value;
+
+        const res = await fetch(`${API}/transactions/deposit?accountId=${accountId}&amount=${amount}`, {
+            method: 'POST'
+        });
+
+        const alert = document.getElementById('depositAlert');
+        if (res.ok) {
+            const data = await res.json();
+            alert.className = 'alert alert-success';
+            alert.style.display = 'block';
+            alert.textContent = `Deposit successful! New Balance: ₹${data.balance}`;
+        } else {
+            const error = await res.text();
+            alert.className = 'alert alert-error';
+            alert.style.display = 'block';
+            alert.textContent = 'Error: ' + error;
+        }
+    }
+
+    // Withdraw
+    async function withdraw() {
+        const accountId = document.getElementById('withdrawAccountId').value;
+        const amount = document.getElementById('withdrawAmount').value;
+
+        const res = await fetch(`${API}/transactions/withdraw?accountId=${accountId}&amount=${amount}`, {
+            method: 'POST'
+        });
+
+        const alert = document.getElementById('withdrawAlert');
+        if (res.ok) {
+            const data = await res.json();
+            alert.className = 'alert alert-success';
+            alert.style.display = 'block';
+            alert.textContent = `Withdrawal successful! New Balance: ₹${data.balance}`;
+        } else {
+            const error = await res.text();
+            alert.className = 'alert alert-error';
+            alert.style.display = 'block';
+            alert.textContent = 'Error: ' + error;
+        }
+    }
+
+    // Transfer
+    async function transfer() {
+        const fromAccountId = document.getElementById('fromAccountId').value;
+        const toAccountId = document.getElementById('toAccountId').value;
+        const amount = document.getElementById('transferAmount').value;
+
+        const res = await fetch(`${API}/transactions/transfer?fromAccountId=${fromAccountId}&toAccountId=${toAccountId}&amount=${amount}`, {
+            method: 'POST'
+        });
+
+        const alert = document.getElementById('transferAlert');
+        if (res.ok) {
+            alert.className = 'alert alert-success';
+            alert.style.display = 'block';
+            alert.textContent = 'Transfer successful!';
+        } else {
+            const error = await res.text();
+            alert.className = 'alert alert-error';
+            alert.style.display = 'block';
+            alert.textContent = 'Error: ' + error;
+        }
+    }
+</script>
+
+</body>
+</html>

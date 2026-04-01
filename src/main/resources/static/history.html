@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking Simulator - Transaction History</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+    <h1>🏦 Banking Simulator</h1>
+    <div>
+        <a href="index.html">Dashboard</a>
+        <a href="accounts.html">Accounts</a>
+        <a href="transactions.html">Transactions</a>
+        <a href="history.html">History</a>
+        <a href="reports.html">Reports</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- Search by Account Number -->
+    <div class="card">
+        <h2>🔍 Search Transactions</h2>
+        <div class="form-group">
+            <label>Account Number</label>
+            <input type="text" id="searchAccount" placeholder="e.g. ACC001">
+        </div>
+        <button class="btn btn-primary" onclick="searchTransactions()">Search</button>
+        <button class="btn btn-warning" onclick="loadAllTransactions()" style="margin-left:10px">Show All</button>
+    </div>
+
+    <!-- Mini Statement -->
+    <div class="card">
+        <h2>📄 Mini Statement (Last 5 Transactions)</h2>
+        <div class="form-group">
+            <label>Account Number</label>
+            <input type="text" id="miniAccount" placeholder="e.g. ACC001">
+        </div>
+        <button class="btn btn-primary" onclick="loadMiniStatement()">Get Mini Statement</button>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="card">
+        <h2>📜 Transaction History</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Reference No</th>
+                <th>Account Number</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Balance Before</th>
+                <th>Balance After</th>
+                <th>Description</th>
+                <th>Date & Time</th>
+            </tr>
+            </thead>
+            <tbody id="historyTable">
+            <tr><td colspan="9">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+    const API = 'http://localhost:8080/api';
+
+    // Load All Transactions
+    async function loadAllTransactions() {
+        const res = await fetch(`${API}/transactions`);
+        const transactions = await res.json();
+        displayTransactions(transactions);
+    }
+
+    // Search by Account Number
+    async function searchTransactions() {
+        const accountNumber = document.getElementById('searchAccount').value;
+        if (!accountNumber) {
+            loadAllTransactions();
+            return;
+        }
+        const res = await fetch(`${API}/transactions/account/${accountNumber}`);
+        const transactions = await res.json();
+        displayTransactions(transactions);
+    }
+
+    // Mini Statement (Last 5)
+    async function loadMiniStatement() {
+        const accountNumber = document.getElementById('miniAccount').value;
+
+        if (!accountNumber) {
+            alert("Please enter account number");
+            return;
+        }
+
+        const res = await fetch(`${API}/transactions/mini/${accountNumber}`);
+        const transactions = await res.json();
+
+        displayTransactions(transactions);
+    }
+
+    // Display Transactions
+    function displayTransactions(transactions) {
+        const tbody = document.getElementById('historyTable');
+        tbody.innerHTML = '';
+
+        if (transactions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9">No transactions found</td></tr>';
+            return;
+        }
+
+        transactions.reverse().forEach(t => {
+            const type = t.type.toLowerCase();
+            const badgeClass = type.includes('deposit') ? 'badge-deposit' :
+                               type.includes('withdrawal') ? 'badge-withdraw' : 'badge-transfer';
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${t.id}</td>
+                    <td>${t.referenceNumber || 'N/A'}</td>
+                    <td>${t.accountNumber}</td>
+                    <td><span class="badge ${badgeClass}">${t.type}</span></td>
+                    <td>₹${t.amount.toLocaleString()}</td>
+                    <td>₹${t.balanceBefore || 0}</td>
+                    <td>₹${t.balanceAfter || 0}</td>
+                    <td>${t.description}</td>
+                    <td>${new Date(t.timestamp).toLocaleString()}</td>
+                </tr>`;
+        });
+    }
+
+    loadAllTransactions();
+</script>
+
+</body>
+</html>

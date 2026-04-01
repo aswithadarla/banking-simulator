@@ -1,0 +1,30 @@
+=== Transaction Report ===
+Account Number: ACC001
+Generated At: 2026-04-01T14:26:38.973303200
+==========================
+
+Type: DEPOSIT
+Amount: 2000.0
+Description: Amount deposited
+Timestamp: 2026-03-29T18:48:25.780821
+--------------------------
+Type: WITHDRAWAL
+Amount: 9800.0
+Description: Amount withdrawn
+Timestamp: 2026-03-29T19:00:00.212171
+--------------------------
+Type: WITHDRAWAL
+Amount: 2000.0
+Description: Amount withdrawn
+Timestamp: 2026-03-29T19:00:44.913151
+--------------------------
+Type: DEPOSIT
+Amount: 200.0
+Description: Amount deposited
+Timestamp: 2026-03-30T16:06:02.285688
+--------------------------
+Type: DEPOSIT
+Amount: 2000.0
+Description: Amount deposited
+Timestamp: 2026-03-30T16:18:43.135367
+--------------------------

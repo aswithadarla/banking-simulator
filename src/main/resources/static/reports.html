@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking Simulator - Reports</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+    <h1>🏦 Banking Simulator</h1>
+    <div>
+        <a href="index.html">Dashboard</a>
+        <a href="accounts.html">Accounts</a>
+        <a href="transactions.html">Transactions</a>
+        <a href="history.html">History</a>
+        <a href="reports.html">Reports</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- Generate Report -->
+    <div class="card">
+        <h2>📊 Generate Account Report</h2>
+        <div id="reportAlert" class="alert"></div>
+        <div class="form-group">
+            <label>Account Number</label>
+            <input type="text" id="reportAccount" placeholder="e.g. ACC001">
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+            <button class="btn btn-success" onclick="printReport()">🖨️ Print Report</button>
+            <button class="btn btn-warning" onclick="downloadReport()">⬇️ Download Report</button>
+        </div>
+    </div>
+
+    <!-- Report Preview -->
+    <div class="card" id="reportPreview" style="display:none">
+        <h2>📄 Report Preview</h2>
+        <div id="reportContent" style="font-family: monospace; white-space: pre-wrap;
+             background:#f5f5f5; padding:20px; border-radius:8px; font-size:13px;">
+        </div>
+    </div>
+
+    <!-- List Reports -->
+    <div class="card">
+        <h2>📁 Generated Reports</h2>
+        <button class="btn btn-primary" onclick="loadReports()"
+                style="margin-bottom:15px">Refresh List</button>
+        <table>
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Report File Name</th>
+            </tr>
+            </thead>
+            <tbody id="reportsTable">
+            <tr><td colspan="2">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Low Balance Accounts -->
+    <div class="card">
+        <h2>⚠️ Low Balance Accounts</h2>
+        <button class="btn btn-danger" onclick="loadLowBalance()"
+                style="margin-bottom:15px">Check Low Balance</button>
+        <div id="lowBalanceList"></div>
+    </div>
+
+</div>
+
+<script>
+    const API = 'http://localhost:8080/api';
+    let lastReportContent = '';
+
+    // Generate Report
+    async function generateReport() {
+        const accountNumber = document.getElementById('reportAccount').value;
+        if (!accountNumber) {
+            const alert = document.getElementById('reportAlert');
+            alert.className = 'alert alert-error';
+            alert.style.display = 'block';
+            alert.textContent = 'Please enter account number!';
+            return;
+        }
+
+        const res = await fetch(`${API}/reports/${accountNumber}`);
+        const message = await res.text();
+
+        const alert = document.getElementById('reportAlert');
+        if (res.ok) {
+            alert.className = 'alert alert-success';
+            alert.style.display = 'block';
+            alert.textContent = message;
+
+            // Show report preview
+            await loadReportPreview(accountNumber);
+            loadReports();
+        } else {
+            alert.className = 'alert alert-error';
+            alert.style.display = 'block';
+            alert.textContent = 'Error: ' + message;
+        }
+    }
+
+    // Load Report Preview
+    async function loadReportPreview(accountNumber) {
+        const res = await fetch(`${API}/transactions/account/${accountNumber}`);
+        const transactions = await res.json();
+
+        let content = '=== Transaction Report ===\n';
+        content += 'Account Number: ' + accountNumber + '\n';
+        content += 'Generated At: ' + new Date().toLocaleString() + '\n';
+        content += '==========================\n\n';
+
+        transactions.forEach(t => {
+            content += 'Reference: ' + (t.referenceNumber || 'N/A') + '\n';
+            content += 'Type: ' + t.type + '\n';
+            content += 'Amount: ₹' + t.amount + '\n';
+            content += 'Balance Before: ₹' + t.balanceBefore + '\n';
+            content += 'Balance After: ₹' + t.balanceAfter + '\n';
+            content += 'Description: ' + t.description + '\n';
+            content += 'Timestamp: ' + new Date(t.timestamp).toLocaleString() + '\n';
+            content += '--------------------------\n';
+        });
+
+        lastReportContent = content;
+        document.getElementById('reportContent').textContent = content;
+        document.getElementById('reportPreview').style.display = 'block';
+    }
+
+    // Print Report
+    function printReport() {
+        const accountNumber = document.getElementById('reportAccount').value;
+        if (!accountNumber) {
+            alert('Please generate a report first!');
+            return;
+        }
+        window.print();
+    }
+
+    // Download Report
+    function downloadReport() {
+        const accountNumber = document.getElementById('reportAccount').value;
+        if (!lastReportContent) {
+            alert('Please generate a report first!');
+            return;
+        }
+        const blob = new Blob([lastReportContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'report_' + accountNumber + '_' + Date.now() + '.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Load Reports List
+    async function loadReports() {
+        const res = await fetch(`${API}/reports/list`);
+        const reports = await res.json();
+
+        const tbody = document.getElementById('reportsTable');
+        tbody.innerHTML = '';
+
+        if (reports.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2">No reports found</td></tr>';
+            return;
+        }
+
+        reports.forEach((report, index) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${report}</td>
+                </tr>`;
+        });
+    }
+
+    // Load Low Balance Accounts
+    async function loadLowBalance() {
+        const res = await fetch(`${API}/reports/alerts/low-balance`);
+        const accounts = await res.json();
+
+        const div = document.getElementById('lowBalanceList');
+        if (accounts.length === 0) {
+            div.innerHTML = '<p style="color:green">✅ No low balance accounts!</p>';
+            return;
+        }
+
+        div.innerHTML = '';
+        accounts.forEach(a => {
+            div.innerHTML += `
+                <div class="alert alert-error" style="display:block; margin-bottom:10px">
+                    ⚠️ ${a}
+                </div>`;
+        });
+    }
+
+    loadReports();
+</script>
+
+</body>
+</html>

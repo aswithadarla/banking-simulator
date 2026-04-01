@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking Simulator - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+    <h1>🏦 Banking Simulator</h1>
+    <div>
+        <a href="index.html">Dashboard</a>
+        <a href="accounts.html">Accounts</a>
+        <a href="transactions.html">Transactions</a>
+        <a href="history.html">History</a>
+        <a href="reports.html">Reports</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <h3>Total Accounts</h3>
+            <p id="totalAccounts">-</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Balance</h3>
+            <p id="totalBalance">-</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Transactions</h3>
+            <p id="totalTransactions">-</p>
+        </div>
+    </div>
+
+    <!-- All Accounts Table -->
+    <div class="card">
+        <h2>📋 All Accounts</h2>
+        <div id="spinner1" class="spinner"></div>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Account Number</th>
+                <th>Holder Name</th>
+                <th>Balance</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody id="accountsTable">
+            <tr><td colspan="5">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card">
+        <h2>🔄 Recent Transactions</h2>
+        <div id="spinner2" class="spinner"></div>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Account Number</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Description</th>
+                <th>Date</th>
+            </tr>
+            </thead>
+            <tbody id="transactionsTable">
+            <tr><td colspan="6">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+    const API = 'http://localhost:8080/api';
+
+    // Load Accounts
+    async function loadAccounts() {
+        document.getElementById('spinner1').style.display = 'block';
+        const res = await fetch(`${API}/accounts`);
+        const accounts = await res.json();
+        document.getElementById('spinner1').style.display = 'none';
+
+        document.getElementById('totalAccounts').textContent = accounts.length;
+
+        let totalBalance = 0;
+        accounts.forEach(a => totalBalance += a.balance);
+        document.getElementById('totalBalance').textContent = '₹' + totalBalance.toLocaleString();
+
+        const tbody = document.getElementById('accountsTable');
+        tbody.innerHTML = '';
+        accounts.forEach(a => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${a.id}</td>
+                    <td>${a.accountNumber}</td>
+                    <td>${a.holderName}</td>
+                    <td>₹${a.balance.toLocaleString()}</td>
+                    <td>
+                        <span class="badge ${a.active ? 'badge-success' : 'badge-danger'}">
+                            ${a.active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    // Load Transactions
+    async function loadTransactions() {
+        document.getElementById('spinner2').style.display = 'block';
+        const res = await fetch(`${API}/transactions`);
+        const transactions = await res.json();
+        document.getElementById('spinner2').style.display = 'none';
+
+        document.getElementById('totalTransactions').textContent = transactions.length;
+
+        const tbody = document.getElementById('transactionsTable');
+        tbody.innerHTML = '';
+        transactions.slice(-10).reverse().forEach(t => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${t.id}</td>
+                    <td>${t.accountNumber}</td>
+                    <td>
+                        <span class="badge badge-${t.type.toLowerCase().includes('deposit') ? 'deposit' : t.type.toLowerCase().includes('withdraw') ? 'withdraw' : 'transfer'}">
+                            ${t.type}
+                        </span>
+                    </td>
+                    <td>₹${t.amount.toLocaleString()}</td>
+                    <td>${t.description}</td>
+                    <td>${new Date(t.timestamp).toLocaleString()}</td>
+                </tr>`;
+        });
+    }
+
+    loadAccounts();
+    loadTransactions();
+</script>
+
+</body>
+</html>
